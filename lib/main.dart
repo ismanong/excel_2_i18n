@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider_windows/path_provider_windows.dart';
 import 'package:excel/excel.dart';
 import 'dir_file_tools.dart';
+import 'excel_list_2_map.dart';
 
 void main() async {
   runApp(MyApp());
@@ -103,14 +104,16 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         _excelTables = excel.tables;
       });
-      for (var table in excel.tables.keys) {
-        print('sheet name: '+ table); //sheet Name
-        print('maxCols   : '+ excel.tables[table].maxCols.toString());
-        print('maxRows   : '+ excel.tables[table].maxRows.toString());
-        for (var row in excel.tables[table].rows) {
-          print("$row");
-        }
-      }
+
+      excelList2Map(_excelTables);
+      // for (var table in excel.tables.keys) {
+      //   print('sheet name: '+ table); //sheet Name
+      //   print('maxCols   : '+ excel.tables[table].maxCols.toString());
+      //   print('maxRows   : '+ excel.tables[table].maxRows.toString());
+      //   for (var row in excel.tables[table].rows) {
+      //     print("$row");
+      //   }
+      // }
     }else{
       setState(() {
         _isExcelWeb = '无文件';
