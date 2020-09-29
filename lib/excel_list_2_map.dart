@@ -6,28 +6,7 @@ import 'package:flutter/services.dart';
 
 import 'dir_file_tools.dart';
 
-Map<String, String> langCodeMap = {
-  "en": "en-us", // 英语
-  "zh": "zh-zh", // 繁体中文
-  "cn": "zh-cn", // 简体中文
-  "tr": "tr-tr", // 土耳其语
-  "de": "de-de", // 德语
-  "fr": "fr-fr", // 法语
-  "ru": "ru-ru", // 俄语
-  "es": "es-es", // 西班牙语
-  "pt": "pt-pt", // 葡萄牙语
-  "pl": "pl-pl", // 波兰语
-  "id": "id-id", // 印尼语
-  "it": "it-it", // 意大利语
-  "th": "th-th", // 泰语
-  "ar": "ar-ar", // 阿拉伯语
-  "kr": "kr-kr", // 韩语
-  "jp": "jp-jp", // 日文  //公司内部写错的遗留问题  正确的是 "ja": "ja-jp"
-  "vi": "vi-vn", // 越南
-};
-
-
-void excelList2Map(Map<String, Sheet> excelTables) {
+void excelList2Map(Map<String, Sheet> excelTables, String outputDirPath) {
   List<Map> res = [];
   Map resMap = {};
   excelTables.keys.forEach((String sheetName){
@@ -51,15 +30,16 @@ void excelList2Map(Map<String, Sheet> excelTables) {
   print(resMap);
   resMap.forEach((key, value) {
     String json = jsonEncode(value);
-    String dirPath = 'C:/Users/g/Downloads';
-    String saveFile = '$dirPath/web_i18n/$key.json';
+    String saveFile = '$outputDirPath/web_i18n/$key.json';
     List<int> bytes = utf8.encode(json);
-    // TODO string 怎么转 ByteData
     writeFile(saveFile,bytes);
+
+    // TODO string 怎么转 ByteData
+    // Uint8List bytes = utf8.encode(json);
+    // ByteData blob = ByteData.sublistView(bytes);
+    // writeFile(saveFile,bytes);
   });
-
 }
-
 
 Map excelList2MapItem(String sheetName,List<List<dynamic>> rows) {
   // `rows` 是一个行数组 每行是一个单元格数组
@@ -136,3 +116,23 @@ Map excelList2MapItem(String sheetName,List<List<dynamic>> rows) {
 
  return allLanguages;
 }
+
+Map<String, String> langCodeMap = {
+  "en": "en-us", // 英语
+  "zh": "zh-zh", // 繁体中文
+  "cn": "zh-cn", // 简体中文
+  "tr": "tr-tr", // 土耳其语
+  "de": "de-de", // 德语
+  "fr": "fr-fr", // 法语
+  "ru": "ru-ru", // 俄语
+  "es": "es-es", // 西班牙语
+  "pt": "pt-pt", // 葡萄牙语
+  "pl": "pl-pl", // 波兰语
+  "id": "id-id", // 印尼语
+  "it": "it-it", // 意大利语
+  "th": "th-th", // 泰语
+  "ar": "ar-ar", // 阿拉伯语
+  "kr": "kr-kr", // 韩语
+  "jp": "jp-jp", // 日文  //公司内部写错的遗留问题  正确的是 "ja": "ja-jp"
+  "vi": "vi-vn", // 越南
+};
