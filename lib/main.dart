@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:file_chooser/file_chooser.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider_windows/path_provider_windows.dart';
 import 'package:excel/excel.dart';
@@ -43,6 +44,39 @@ class _MyAppState extends State<MyApp> {
     _launchURL('file:///$_downloadsDirectory/web_i18n');
   }
 
+  String _completeText = '';
+  File _selectFile;
+  Future<void> _openPanel() async {
+    var result = await showOpenPanel(
+      initialDirectory: "/Users/mirock/Desktop", //打开面板时显示的目录
+      allowsMultipleSelection: true, //允许选择多个文件或
+      allowedFileTypes: [new FileTypeFilterGroup(label: 'excel',fileExtensions: ['xlsx'])], //允许文件扩展名
+      confirmButtonText: "确定", //面板按钮文本更改
+    ); //
+    // 如果成功，则选择文件作为成功时的处理
+    if (!result.canceled) {
+      File xlsx = File(result.paths[0]);
+      _selectFile = xlsx;
+      print(xlsx.path);
+    }
+  }
+
+
+  Future<void> _savePanel() async {
+    var result = await showSavePanel(
+      suggestedFileName: "新的文件.png", //打开面板时要保存的文件名
+      initialDirectory: "/Users/mirock/Desktop", //打开面板时显示目录
+      // allowedFileTypes: ["png"], //允许文件扩展名
+      // confirmButtonText: "保存!",  //面板按钮文本更改
+    );
+    if (!result.canceled && _selectFile != null) {
+      _selectFile.copy(result.paths[0]);
+    } else {
+      setState(() => _completeText = "总觉得不行");
+    }
+  }
+
+
   @override
   void initState() {
     super.initState();
@@ -51,10 +85,8 @@ class _MyAppState extends State<MyApp> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initDirectories() async {
-    String tempDirectory;
     String downloadsDirectory;
     String appSupportDirectory;
-    String documentsDirectory;
     final PathProviderWindows provider = PathProviderWindows();
 
     try {
@@ -153,10 +185,26 @@ class _MyAppState extends State<MyApp> {
                   children: [
                     Text('下载目录: $_downloadsDirectory\n'),
                     Text('应用目录: $_appSupportDirectory\n'),
-                    Text('多语言excel路径: $_excelFilePath\n'),
+                    Row(
+                      children: [
+                        Text('多语言excel路径: $_excelFilePath\n'),
+                        RaisedButton(onPressed: _openPanel, child: Text('位置')),
+                      ],
+                    ),
+
                   ],
                 ),
                 RaisedButton(onPressed: sure2Json, child: Text('点击转换')),
+                FlatButton(
+                  color: Colors.blueGrey,
+                  child: Text(
+                    "保存",
+                  ),
+                  onPressed: () async => _savePanel(),
+                ),
+                Text(
+                  _completeText ?? "",
+                ),
               ],
             ),
             Expanded(
