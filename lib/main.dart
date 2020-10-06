@@ -1,17 +1,14 @@
-// Copyright 2020 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-// ignore_for_file: public_member_api_docs
-
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_chooser/file_chooser.dart';
 import 'package:flutter/material.dart';
+import 'package:i18n_tools/tree_view.dart';
 import 'package:path_provider_windows/path_provider_windows.dart';
 import 'package:excel/excel.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'c++.dart';
 import 'dir_file_tools.dart';
 import 'excel_list_2_map.dart';
 
@@ -19,7 +16,6 @@ void main() async {
   runApp(MyApp());
 }
 
-/// Sample app
 class MyApp extends StatefulWidget {
   @override
   _MyAppState createState() => _MyAppState();
@@ -28,8 +24,11 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _downloadsDirectory = 'Unknown';
   String _appSupportDirectory = 'Unknown';
-  String _excelFilePath = 'Unknown';
   Map<String, Sheet> _excelTables = {};
+  Map _resMap = {};
+  TextEditingController _controller = new TextEditingController(text: '');
+  TextEditingController _controller2 = new TextEditingController(text: '');
+  int groupValue = 1;
 
   _launchURL(String url) async {
     if (await canLaunch(url)) {
@@ -40,8 +39,14 @@ class _MyAppState extends State<MyApp> {
   }
 
   sure2Json() {
-    excelList2Map(_excelTables, _downloadsDirectory);
-    _launchURL('file:///$_downloadsDirectory/web_i18n');
+    if (_controller2.text == '') return;
+    String outputDirPath = '$_downloadsDirectory/gta_i18n_${formattedDate()}';
+    if (groupValue == 1) {
+      ExcelList2Map().excelList2MapOutputFile(_resMap, outputDirPath);
+    } else {
+      CppI18n().excelList2MapOutputFile(_resMap, outputDirPath);
+    }
+    _launchURL('file:///$outputDirPath');
   }
 
   String _completeText = '';
@@ -50,17 +55,36 @@ class _MyAppState extends State<MyApp> {
     var result = await showOpenPanel(
       initialDirectory: "/Users/mirock/Desktop", //打开面板时显示的目录
       allowsMultipleSelection: true, //允许选择多个文件或
-      allowedFileTypes: [new FileTypeFilterGroup(label: 'excel',fileExtensions: ['xlsx'])], //允许文件扩展名
+      allowedFileTypes: [
+        new FileTypeFilterGroup(label: 'excel', fileExtensions: ['xlsx'])
+      ], //允许文件扩展名
       confirmButtonText: "确定", //面板按钮文本更改
     ); //
     // 如果成功，则选择文件作为成功时的处理
     if (!result.canceled) {
       File xlsx = File(result.paths[0]);
       _selectFile = xlsx;
-      print(xlsx.path);
+      _controller2.value = TextEditingValue(text: xlsx.path);
+      var bytes = xlsx.readAsBytesSync();
+      var excel = Excel.decodeBytes(bytes);
+      Map resMap;
+      if (groupValue == 1) {
+        resMap = ExcelList2Map().excelList2Map(excel.tables);
+      } else {
+        resMap = CppI18n().excelList2Map(
+          excel.tables,
+          isPassRepeatKey: true,
+          langKey: 'en',
+          isMergeSheets: true,
+          isSimplifyLangCode: true,
+        );
+      }
+      setState(() {
+        _excelTables = excel.tables;
+        _resMap = resMap;
+      });
     }
   }
-
 
   Future<void> _savePanel() async {
     var result = await showSavePanel(
@@ -76,19 +100,10 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-
-  @override
-  void initState() {
-    super.initState();
-    initDirectories();
-  }
-
-  // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initDirectories() async {
     String downloadsDirectory;
     String appSupportDirectory;
     final PathProviderWindows provider = PathProviderWindows();
-
     try {
       downloadsDirectory = await provider.getDownloadsPath();
     } catch (exception) {
@@ -103,54 +118,218 @@ class _MyAppState extends State<MyApp> {
       _downloadsDirectory = downloadsDirectory;
       _appSupportDirectory = appSupportDirectory;
     });
-
-    // var myDir = new Directory('D:/_work/svn资源/client/前端技术/语料包');
-    // var myDir = new Directory('D:/');
-    // var myDir = new Directory('D:/_work/client-web-tools/i18n-excel-to-json');
-    // print("Path: ${myDir.absolute.path}\n");
-    // Stream<FileSystemEntity> entityList =
-    //     myDir.list(recursive: false, followLinks: false);
-    // await for (FileSystemEntity entity in entityList) {
-    //   //文件、目录和链接都继承自FileSystemEntity
-    //   //FileSystemEntity.type静态函数返回值为FileSystemEntityType
-    //   //FileSystemEntityType有三个常量：
-    //   //Directory、FILE、LINK、NOT_FOUND
-    //   //FileSystemEntity.isFile .isLink .isDerectory可用于判断类型
-    //   print(entity.path);
-    // }
+    _controller.value = TextEditingValue(text: _downloadsDirectory);
 
     String filePath =
         "D:/_work/client-web-tools/i18n-excel-to-json/i18n_web.xlsx";
     File file = File(filePath);
     if (file.existsSync()) {
-      setState(() {
-        _excelFilePath = filePath;
-      });
       var bytes = file.readAsBytesSync();
       var excel = Excel.decodeBytes(bytes);
+      Map resMap = ExcelList2Map().excelList2Map(excel.tables);
       setState(() {
         _excelTables = excel.tables;
-      });
-      // for (var table in excel.tables.keys) {
-      //   print('sheet name: '+ table); //sheet Name
-      //   print('maxCols   : '+ excel.tables[table].maxCols.toString());
-      //   print('maxRows   : '+ excel.tables[table].maxRows.toString());
-      //   for (var row in excel.tables[table].rows) {
-      //     print("$row");
-      //   }
-      // }
-    } else {
-      setState(() {
-        _excelFilePath = '无文件';
+        _resMap = resMap;
       });
     }
   }
 
-  Widget excelListItem(List<List<dynamic>> rows) {
+  @override
+  void initState() {
+    super.initState();
+    initDirectories();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: Text('应用目录: $_appSupportDirectory'),
+        ),
+        body: Column(
+          children: [
+            pathCon(),
+            paramsCon(),
+            outputCon(),
+            SizedBox(height: 20.0),
+            Expanded(
+                child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.blueAccent,
+                        style: BorderStyle.solid,
+                      ),
+                    ),
+                    child: excelListContent(),
+                  ),
+                ),
+                Icon(Icons.arrow_forward),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.blueAccent,
+                        style: BorderStyle.solid,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.blueAccent,
+                              style: BorderStyle.solid,
+                            ),
+                          ),
+                          width: 200,
+                          child: prvDemo2(),
+                        ),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Colors.redAccent,
+                                style: BorderStyle.solid,
+                              ),
+                            ),
+                            child: prvJsonDemo(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget prvDemo() {
+    List<dynamic> listKeys = _resMap.keys.toList();
+    return TreeView(
+      parentList: [
+        Parent(
+          isExpanded: true,
+          parent: Row(
+            children: [
+              Icon(Icons.folder, color: Colors.orange),
+              Text('web_i18n'),
+            ],
+          ),
+          childList: ChildList(
+            children: List<Widget>.generate(listKeys.length, (index) {
+              String key = listKeys[index];
+              Map value = _resMap[key];
+
+              return Container(
+                margin: EdgeInsets.only(left: 20.0),
+                height: 25.0,
+                child: FlatButton.icon(
+                  padding: EdgeInsets.all(0),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onPressed: () {
+                    setState(() {
+                      _fileJsonMap = value;
+                    });
+                  },
+                  icon: Icon(Icons.insert_drive_file_outlined,
+                      color: Colors.orange),
+                  label: Text('$key.json'),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget prvDemo2() {
+    List<dynamic> listKeys = _resMap.keys.toList();
+    return TreeView(
+      parentList: [
+        Parent(
+          isExpanded: true,
+          parent: Row(
+            children: [
+              Icon(Icons.folder, color: Colors.orange),
+              Text('web_i18n'),
+            ],
+          ),
+          childList: ChildList(
+            children: List<Widget>.generate(listKeys.length, (index) {
+              String key = listKeys[index];
+              Map value = _resMap[key];
+
+              return Container(
+                margin: EdgeInsets.only(left: 20.0),
+                height: 25.0,
+                child: FlatButton.icon(
+                  padding: EdgeInsets.all(0),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onPressed: () {
+                    setState(() {
+                      _fileJsonMap = value;
+                    });
+                  },
+                  icon: Icon(Icons.insert_drive_file_outlined,
+                      color: Colors.orange),
+                  label: Text('$key.json'),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Map _fileJsonMap = {};
+  Widget prvJsonDemo() {
+    String prettyJsonStr =
+        new JsonEncoder.withIndent('    ').convert(_fileJsonMap);
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.0),
+      child: SingleChildScrollView(
+        child: Text('$prettyJsonStr'),
+      ),
+    );
+  }
+
+  Widget excelListRowsRow(List<dynamic> row) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List<Widget>.generate(row.length, (index) {
+        // return Text('${row[index].toString()}');
+        return Container(
+          decoration: BoxDecoration(
+            color: row[index] == null ? Colors.redAccent : Colors.white,
+            border: Border.all(
+              color: Colors.grey,
+              style: BorderStyle.solid,
+            ),
+          ),
+          width: 30,
+          height: 30,
+          child: Text('$index'),
+        );
+      }),
+    );
+  }
+
+  Widget excelListRows(List<List<dynamic>> rows) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: List<Widget>.generate(rows.length, (index) {
-        return Text('${rows[index][0]},${rows[index][1]}');
+        return excelListRowsRow(rows[index]);
       }),
     );
   }
@@ -160,7 +339,7 @@ class _MyAppState extends State<MyApp> {
     _excelTables.keys.forEach((String sheetName) {
       Sheet sheet = _excelTables[sheetName];
       List<List<dynamic>> rows = sheet.rows;
-      list.add(excelListItem(rows));
+      list.add(excelListRows(rows));
       // print(excelListItem(rows));
       // list.add(Text('Path Provider example app'));
     });
@@ -169,50 +348,175 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('demo'),
-        ),
-        body: Column(
-          children: [
-            Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('下载目录: $_downloadsDirectory\n'),
-                    Text('应用目录: $_appSupportDirectory\n'),
-                    Row(
-                      children: [
-                        Text('多语言excel路径: $_excelFilePath\n'),
-                        RaisedButton(onPressed: _openPanel, child: Text('位置')),
-                      ],
-                    ),
-
-                  ],
-                ),
-                RaisedButton(onPressed: sure2Json, child: Text('点击转换')),
-                FlatButton(
-                  color: Colors.blueGrey,
-                  child: Text(
-                    "保存",
+  Widget pathCon() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              buildTextField('下载目录', _controller),
+              SizedBox(width: 10.0),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Color(0xFFcccedb),
+                    style: BorderStyle.solid,
                   ),
-                  onPressed: () async => _savePanel(),
                 ),
-                Text(
-                  _completeText ?? "",
+                width: 80.0,
+                height: 22.0,
+                child: FlatButton(
+                  padding: EdgeInsets.all(0),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onPressed: _openPanel,
+                  child: Text('浏览(B)'),
                 ),
-              ],
-            ),
-            Expanded(
-              child: excelListContent(),
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              buildTextField('多语言excel位置', _controller2),
+              SizedBox(width: 10.0),
+              Container(
+                width: 80.0,
+                height: 22.0,
+                child: OutlineButton(
+                  borderSide: BorderSide(color: Color(0xFFcccedb)),
+                  padding: EdgeInsets.all(0),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onPressed: _openPanel,
+                  child: Text('浏览(B)'),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20.0),
+        ],
       ),
+    );
+  }
+
+  Widget paramsCon() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.0),
+      child: Row(
+        children: [
+          Text('选择多语言使用场景：'),
+          Radio(
+            value: 1,
+            groupValue: groupValue,
+            onChanged: (v) {
+              setState(() {
+                groupValue = v;
+              });
+            },
+          ),
+          Text('web'),
+          Radio(
+            value: 2,
+            groupValue: groupValue,
+            onChanged: (v) {
+              setState(() {
+                groupValue = v;
+              });
+            },
+          ),
+          Text('c++'),
+        ],
+      ),
+    );
+  }
+
+  Widget outputCon() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Color(0xFF3399ff),
+                style: BorderStyle.solid,
+              ),
+            ),
+            width: 80.0,
+            height: 22.0,
+            child: FlatButton(
+              hoverColor: Color(0xFFc9def5),
+              padding: EdgeInsets.all(0),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onPressed: sure2Json,
+              child: Text('输出'),
+            ),
+          ),
+          SizedBox(width: 10.0),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Color(0xFFcccedb),
+                style: BorderStyle.solid,
+              ),
+            ),
+            width: 80.0,
+            height: 22.0,
+            child: FlatButton(
+              padding: EdgeInsets.all(0),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onPressed: () async => _savePanel(),
+              child: Text('另存为'),
+            ),
+          ),
+          Text(_completeText ?? ""),
+        ],
+      ),
+    );
+  }
+
+  Widget buildTextField(String title, TextEditingController ctl) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 20.0),
+        Text(title),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Color(0xFFcccedb),
+              style: BorderStyle.solid,
+            ),
+          ),
+          width: 500,
+          height: 22.0,
+          margin: EdgeInsets.only(top: 10.0),
+          child: TextField(
+            controller: ctl,
+            decoration: InputDecoration(
+              hintText: '',
+              contentPadding: EdgeInsets.all(8.5),
+              disabledBorder: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+            ),
+            keyboardType: TextInputType.text, //键盘类型
+            textInputAction: TextInputAction.search, //为next时，enter键显示的文字内容为 下一步
+            textCapitalization: TextCapitalization.words, //none 默认使用小写
+            style: TextStyle(fontSize: 14.0, color: Colors.black54), //输入文本的样式
+            // autofocus: true, //是否自动获得焦点
+            onChanged: (text) {
+              // _text = text;
+            },
+            onSubmitted: (text) {
+              // _submit();
+            },
+          ),
+        ),
+      ],
     );
   }
 }
