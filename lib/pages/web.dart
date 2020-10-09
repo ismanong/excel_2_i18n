@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:excel/excel.dart';
 
-import 'dir_file_tools.dart';
-import 'excel_list_2_map.dart';
+import '../util/dir_file_tools.dart';
+import '../util/excel_list_2_map.dart';
 
 class WebI18n extends ExcelList2Map{
   // web

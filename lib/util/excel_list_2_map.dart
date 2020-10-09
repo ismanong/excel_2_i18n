@@ -85,6 +85,7 @@ class ExcelList2Map {
       List<dynamic> row = rows[i];
       // 如果表key为空，则输出md5,以第一列内容输出md5
       String rowKey = getKey(row[0], titles, row);
+      _checkKey(rowKey,titles,row,sheetName);
 
       for (int j = 1; j < row.length; j++) {
         // titles[j] 获取语言标识 row[0] 获取此行语言的key row[j] 获取此行语言的value
@@ -100,13 +101,12 @@ class ExcelList2Map {
         // }else{
         allLanguages[titles[j]][sheetName][rowKey] = row[j] ?? rowKey;
         // }
-        // {"en-us":{"key1":"en-us-key1-value1"},"zh-cn":{"key1":"zh-cn-key1-value2"}}
+        /// {"en-us":{"key1":"en-us-key1-value1"},"zh-cn":{"key1":"zh-cn-key1-value2"}}
       }
     }
     return allLanguages;
   }
 
-  Map keysValues = {};
   getKey(String rowKey, titles, row) {
     // if (row_key != null && row_key.length > 0) {
     //   String abc = reg.stringMatch(row_key); // 可能key写的是注释 中文
@@ -121,13 +121,20 @@ class ExcelList2Map {
       String x16MD5 = digest.substring(8, 24); // 16位md5
       rowKey = x16MD5;
     }
+    return rowKey;
+  }
+
+  Map keysValues = {};
+  List repeatKeysValues = [];
+  _checkKey(String rowKey, titles, row, sheetName){
     if (keysValues.containsKey(rowKey)) {
-      print('有重复的语言内容key\n'
+      String msg = '\n有重复的语言内容key\n'
           '已有的key: $rowKey  值value: ${keysValues[rowKey]}\n'
-          '重复的key: $rowKey  值value: $row');
+          '重复的key: $rowKey  值value: $row\n';
+      print(msg);
+      repeatKeysValues.add(msg);
     }
     keysValues[rowKey] = row;
-    return rowKey;
   }
 
   getLangCode(String langCode) {
