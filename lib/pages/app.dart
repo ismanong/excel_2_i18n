@@ -93,6 +93,7 @@ class _MyAppState extends State<MyApp> {
         _repeatKeysValues = resMsgList;
         _resMap = resMap;
       });
+      // msgDialogRepeat(context,_repeatKeysValues.toString());
     }
   }
 
@@ -129,22 +130,6 @@ class _MyAppState extends State<MyApp> {
       _appSupportDirectory = appSupportDirectory;
     });
     _controller.value = TextEditingValue(text: _downloadsDirectory);
-
-    String filePath =
-        "D:/_work/client-web-tools/i18n-excel-to-json/i18n_web.xlsx";
-    File file = File(filePath);
-    if (file.existsSync()) {
-      var bytes = file.readAsBytesSync();
-      var excel = Excel.decodeBytes(bytes);
-      ExcelList2Map excelList2Map = ExcelList2Map();
-      Map resMap = excelList2Map.excelList2Map(excel.tables);
-      setState(() {
-        _excelTables = excel.tables;
-        _repeatKeysValues = excelList2Map.repeatKeysValues;
-        _resMap = resMap;
-      });
-      msgDialogRepeat(context,_repeatKeysValues.toString());
-    }
   }
 
   @override

@@ -18,7 +18,7 @@ class CppI18n extends ExcelList2Map{
     resMap.forEach((key, value) {
       // String json = jsonEncode(value);
       String prettyJsonStr = new JsonEncoder.withIndent('    ').convert(value);
-      String saveFile = '$outputDirPath/$key/lang.json';
+      String saveFile = '$outputDirPath/$key.json';
       List<int> bytes = utf8.encode(prettyJsonStr);
       writeFile(saveFile, bytes);
     });

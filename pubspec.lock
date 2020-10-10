@@ -137,6 +137,20 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  http:
+    dependency: transitive
+    description:
+      name: http
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.12.2"
+  http_parser:
+    dependency: transitive
+    description:
+      name: http_parser
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.1.4"
   intl:
     dependency: transitive
     description:
@@ -200,6 +214,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.0.4+1"
+  pedantic:
+    dependency: transitive
+    description:
+      name: pedantic
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.9.2"
   petitparser:
     dependency: transitive
     description:
@@ -228,6 +249,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "3.0.13"
+  sentry:
+    dependency: "direct main"
+    description:
+      name: sentry
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.0.1"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -324,6 +352,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.0.1+1"
+  usage:
+    dependency: transitive
+    description:
+      name: usage
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.4.2"
   vector_math:
     dependency: transitive
     description:
