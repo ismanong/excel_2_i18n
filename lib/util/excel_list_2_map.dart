@@ -53,12 +53,12 @@ class ExcelList2Map {
     return resMap;
   }
 
+  RegExp reg = new RegExp("[a-zA-Z-]+");
   Map excelList2MapItem(String sheetName, List<List<dynamic>> rows) {
     // `rows` 是一个行数组 每行是一个单元格数组
     List<dynamic> titleRow = rows[0];
     Map allLanguages = {};
     List<String> titles = [];
-    RegExp reg = new RegExp("[a-zA-Z-]+");
     // 分割-输出表头
     for (int i = 0; i < titleRow.length; i++) {
       String str = titleRow[i].toString(); // 取出英文字母(即 国家英文简写标识code)
@@ -99,6 +99,7 @@ class ExcelList2Map {
         //   Map mmm = allLanguages[titles[j]][sheetName];
         //   mmm.addAll(sss);
         // }else{
+        // String val = row[j] ?? row[titles.indexOf('en-us')]; /// 默认英文
         allLanguages[titles[j]][sheetName][rowKey] = row[j] ?? rowKey;
         // }
         /// {"en-us":{"key1":"en-us-key1-value1"},"zh-cn":{"key1":"zh-cn-key1-value2"}}
@@ -108,11 +109,11 @@ class ExcelList2Map {
   }
 
   getKey(String rowKey, titles, row) {
-    // if (row_key != null && row_key.length > 0) {
-    //   String abc = reg.stringMatch(row_key); // 可能key写的是注释 中文
-    //   row_key = abc == '' ? null : abc; // 取出英文字母
+    // if (rowKey != null && rowKey.length > 0) {
+    //   String abc = reg.stringMatch(rowKey); // 可能key写的是注释 中文
+    //   rowKey = abc == '' ? null : abc; // 取出英文字母
     // }
-    if (rowKey == null) {
+    // if (rowKey == null) {
       int langIndex = titles.indexOf('en-us'); // 找到en-us 根据其内容用md5编码 自动生成key
       int langIndex2 = titles.indexOf('zh-cn'); // 找到en-us 根据其内容用md5编码 自动生成key
       String langText = row[langIndex] + row[langIndex2]; // 中英混合编码 来适应特殊语言场景 也增加复杂度
@@ -120,7 +121,7 @@ class ExcelList2Map {
       String digest = md5.convert(bytes).toString();
       String x16MD5 = digest.substring(8, 24); // 16位md5
       rowKey = x16MD5;
-    }
+    // }
     return rowKey;
   }
 
