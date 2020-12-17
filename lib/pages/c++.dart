@@ -57,7 +57,7 @@ class CppI18n extends ExcelList2Map{
       int langText = titles.indexOf(_langKey);
       rowKey = row[langText];
     }
-    return rowKey;
+    return rowKey.trim(); // 去掉前后空格
   }
 
   @override

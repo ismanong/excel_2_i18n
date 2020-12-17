@@ -32,6 +32,10 @@ dependencies:
     git:
       url: git://github.com/google/flutter-desktop-embedding.git
       path: plugins/file_chooser
+  window_size:
+    git:
+      url: git://github.com/google/flutter-desktop-embedding.git
+      path: plugins/window_size
   bot_toast: ^3.0.4
   sentry: ">=3.0.0 <4.0.0"
 

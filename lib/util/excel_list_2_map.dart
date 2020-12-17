@@ -3,12 +3,17 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/services.dart';
+import 'package:i18n_tools/common/common_func.dart';
 
 import 'dir_file_tools.dart';
 
 class ExcelList2Map {
   void excelList2MapOutputFile(Map resMap, String outputDirPath) {
     resMap.forEach((key, value) {
+      if(key==null){
+        CommonFunc.showToast('有多余空列！！！！！会输出null.json');
+        return;
+      }
       // String json = jsonEncode(value);
       String prettyJsonStr = new JsonEncoder.withIndent('    ').convert(value);
       String saveFile = '$outputDirPath/$key.json';
