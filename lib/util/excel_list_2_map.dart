@@ -10,7 +10,7 @@ import 'dir_file_tools.dart';
 class ExcelList2Map {
   void excelList2MapOutputFile(Map resMap, String outputDirPath) {
     resMap.forEach((key, value) {
-      if(key==null){
+      if (key == null) {
         CommonFunc.showToast('有多余空列！！！！！会输出null.json');
         return;
       }
@@ -40,8 +40,8 @@ class ExcelList2Map {
     List<Map<dynamic, dynamic>> res = [];
     Map<String, Map<dynamic, dynamic>> resMap = {};
     excelTables.keys.forEach((String sheetName) {
-      Sheet sheet = excelTables[sheetName];
-      List<List<dynamic>> rows = sheet.rows;
+      Sheet sheet = excelTables[sheetName]!;
+      List<List<Data?>> rows = sheet.rows;
       Map item = excelList2MapItem(sheetName, rows);
       res.add(item);
     });
@@ -49,7 +49,7 @@ class ExcelList2Map {
     res.forEach((Map<dynamic, dynamic> element) {
       element.forEach((key, value) {
         if (resMap.containsKey(key)) {
-          resMap[key].addAll(value);
+          resMap[key]!.addAll(value);
         } else {
           resMap[key] = value;
         }
@@ -59,22 +59,22 @@ class ExcelList2Map {
   }
 
   RegExp reg = new RegExp("[a-zA-Z-]+");
-  Map excelList2MapItem(String sheetName, List<List<dynamic>> rows) {
+  Map excelList2MapItem(String sheetName, List<List<Data?>> rows) {
     // `rows` 是一个行数组 每行是一个单元格数组
-    List<dynamic> titleRow = rows[0];
+    List<Data?> titleRow = rows[0];
     Map allLanguages = {};
     List<String> titles = [];
     // 分割-输出表头
     for (int i = 0; i < titleRow.length; i++) {
-      String str = titleRow[i].toString(); // 取出英文字母(即 国家英文简写标识code)
-      String langCode = reg.stringMatch(str);
+      String str = titleRow[i]!.value; // 取出英文字母(即 国家英文简写标识code)
+      String? langCode = reg.stringMatch(str);
       if (i == 0) {
         // if(abcdefg === 'key') //TODO  待办
-        titles.add(titleRow[i]);
+        titles.add(titleRow[i]!.value);
       } else {
-        if (langCode == '') {
+        if (langCode == null || langCode == '') {
           // langCode == '' 丢弃——多语言的备注(备注一般给翻译者阅读使用，对程序是无用的)
-          throw '国家为空';
+          throw '\n国家为空: $sheetName $i ${titleRow[i]} \nlangCode: $langCode';
         } else {
           // 取出语言标识代码(zh-cn)  从1开始取 因为0是 key
           String langKey = getLangCode(langCode);
@@ -87,17 +87,19 @@ class ExcelList2Map {
 
     // 分割-输出表内容
     for (int i = 1; i < rows.length; i++) {
-      List<dynamic> row = rows[i];
+      List<Data?> row = rows[i];
       // 如果表key为空，则输出md5,以第一列内容输出md5
-      String rowKey = getKey(row[0], titles, row);
-      _checkKey(rowKey,titles,row,sheetName);
+      String rowKey = getKey(row[0]?.value, titles, row);
+      _checkKey(rowKey, titles, row, sheetName);
 
       for (int j = 1; j < row.length; j++) {
         // titles[j] 获取语言标识 row[0] 获取此行语言的key row[j] 获取此行语言的value
         // allLanguages[titles[j]][row_key] = row[j] ?? row_key;
-        if (allLanguages[titles[j]][sheetName] == null) {
-          allLanguages[titles[j]][sheetName] = {};
-        }
+        /// ------------------------------ TODO
+        // if (allLanguages[titles[j]][sheetName] == null) {
+        //   allLanguages[titles[j]][sheetName] = {};
+        // }
+        /// ------------------------------
         // Map sss = {};
         // sss[row_key] = row[j] ?? row_key;
         // if(allLanguages[titles[j]][sheetName].containsKey(row_key)){
@@ -105,7 +107,10 @@ class ExcelList2Map {
         //   mmm.addAll(sss);
         // }else{
         // String val = row[j] ?? row[titles.indexOf('en-us')]; /// 默认英文
-        allLanguages[titles[j]][sheetName][rowKey] = row[j] ?? rowKey;
+
+        /// 重要
+        // allLanguages[titles[j]][sheetName][rowKey] = row[j]?.value ?? rowKey;
+        allLanguages[titles[j]][rowKey] = row[j]?.value ?? rowKey;
         // }
         /// {"en-us":{"key1":"en-us-key1-value1"},"zh-cn":{"key1":"zh-cn-key1-value2"}}
       }
@@ -113,26 +118,31 @@ class ExcelList2Map {
     return allLanguages;
   }
 
-  getKey(String rowKey, titles, row) {
+  getKey(String? rowKey, titles, List<Data?> row) {
     // if (rowKey != null && rowKey.length > 0) {
     //   String abc = reg.stringMatch(rowKey); // 可能key写的是注释 中文
     //   rowKey = abc == '' ? null : abc; // 取出英文字母
     // }
-    // if (rowKey == null) {
+    if (rowKey == null) {
       int langIndex = titles.indexOf('en-us'); // 找到en-us 根据其内容用md5编码 自动生成key
       int langIndex2 = titles.indexOf('zh-cn'); // 找到en-us 根据其内容用md5编码 自动生成key
-      String langText = row[langIndex] + row[langIndex2]; // 中英混合编码 来适应特殊语言场景 也增加复杂度
+      String langText;
+      String langText1;
+      String langText2;
+      langText1 = row[langIndex]?.value ?? '';
+      langText2 = row[langIndex2]?.value ?? '';
+      langText = langText1 + langText2; // 中英混合编码 来适应特殊语言场景 也增加复杂度
       List<int> bytes = utf8.encode(langText); // data being hashed
       String digest = md5.convert(bytes).toString();
       String x16MD5 = digest.substring(8, 24); // 16位md5
       rowKey = x16MD5;
-    // }
+    }
     return rowKey;
   }
 
   Map keysValues = {};
   List repeatKeysValues = [];
-  _checkKey(String rowKey, titles, row, sheetName){
+  _checkKey(String rowKey, titles, row, sheetName) {
     if (keysValues.containsKey(rowKey)) {
       String msg = '\n有重复的语言内容key\n'
           '已有的key: $rowKey  值value: ${keysValues[rowKey]}\n'
@@ -143,7 +153,7 @@ class ExcelList2Map {
     keysValues[rowKey] = row;
   }
 
-  getLangCode(String langCode) {
+  getLangCode(String? langCode) {
     return langCodeMap[langCode];
   }
 

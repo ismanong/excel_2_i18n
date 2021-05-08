@@ -48,18 +48,18 @@ class Parent extends StatefulWidget {
   final MainAxisSize mainAxisSize;
   final CrossAxisAlignment crossAxisAlignment;
   final MainAxisAlignment mainAxisAlignment;
-  final ParentSelectChanged callback;
+  final ParentSelectChanged? callback;
   final bool isExpanded;
-  final Key key;
+  final Key? key;
 
   Parent({
-    @required this.parent,
-    @required this.childList,
+    required this.parent,
+    required this.childList,
     this.mainAxisAlignment = MainAxisAlignment.center,
     this.crossAxisAlignment = CrossAxisAlignment.start,
     this.mainAxisSize = MainAxisSize.min,
     this.callback,
-    this.isExpanded,
+    this.isExpanded = false,
     this.key,
   });
 
@@ -73,9 +73,7 @@ class ParentState extends State<Parent> {
   @override
   void initState() {
     super.initState();
-    if(widget.isExpanded != null && widget.isExpanded == true){
-      _isSelected = widget.isExpanded;
-    }
+    _isSelected = widget.isExpanded;
   }
 
   @override
@@ -95,7 +93,9 @@ class ParentState extends State<Parent> {
   }
 
   void expand() {
-    if (widget.callback != null) widget.callback(_isSelected);
+    if (widget.callback != null) {
+      widget.callback!(_isSelected);
+    }
     setState(() {
       _isSelected = _toggleBool(_isSelected);
     });

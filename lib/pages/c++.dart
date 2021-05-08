@@ -9,7 +9,7 @@ import '../util/excel_list_2_map.dart';
 class CppI18n extends ExcelList2Map{
 
   bool _isPassRepeatKey = false; // 是否跳过重复的 则覆盖之前的重复的row
-  String _langKey; // 使用固定语言作为key
+  String? _langKey; // 使用固定语言作为key
   bool _isMergeSheets = false; // 是否合并多张数据表
   bool _isSimplifyLangCode = false; // 是否简写语言code: en -> en-us
 
@@ -26,7 +26,7 @@ class CppI18n extends ExcelList2Map{
 
   @override
   Map<String, Map<dynamic, dynamic>> excelList2Map(Map<String, Sheet> excelTables,
-      {bool isPassRepeatKey, String langKey, bool isMergeSheets, bool isSimplifyLangCode}) {
+      {bool? isPassRepeatKey, String? langKey, bool? isMergeSheets, bool? isSimplifyLangCode}) {
     if (isPassRepeatKey != null) {
       _isPassRepeatKey = isPassRepeatKey;
     }
@@ -43,7 +43,7 @@ class CppI18n extends ExcelList2Map{
       Map<dynamic, dynamic> mMerges = {};
       value.forEach((key2, value2) => mMerges.addAll(value2));
       if (resMap.containsKey(key)) {
-        resMap['$key/lang'].addAll(mMerges);
+        resMap['$key/lang']!.addAll(mMerges);
       } else {
         resMap['$key/lang'] = mMerges;
       }
@@ -52,16 +52,16 @@ class CppI18n extends ExcelList2Map{
   }
 
   @override
-  getKey (String rowKey,titles,row){
+  getKey(String? rowKey, titles, List<Data?> row) {
     if (rowKey == null) {
       int langText = titles.indexOf(_langKey);
-      rowKey = row[langText];
+      rowKey = row[langText]!.value;
     }
-    return rowKey.trim(); // 去掉前后空格
+    return rowKey?.trim(); // 去掉前后空格
   }
 
   @override
-  getLangCode (String langCode){
+  getLangCode (String? langCode){
     return langCode;
   }
 

@@ -3,11 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bot_toast/bot_toast.dart';
-import 'package:file_chooser/file_chooser.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'file:///D:/_github/excel_2_i18n/lib/widgets/tree_view.dart';
 import 'package:path_provider_windows/path_provider_windows.dart';
 import 'package:excel/excel.dart';
+import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'c++.dart';
 import '../common/common_func.dart';
@@ -15,23 +16,19 @@ import '../util/dir_file_tools.dart';
 import '../util/excel_list_2_map.dart';
 import 'msg_dialog_repeat.dart';
 
-void main() async {
-  runApp(MyApp());
-}
-
-class MyApp extends StatefulWidget {
+class PageHome extends StatefulWidget {
   @override
-  _MyAppState createState() => _MyAppState();
+  _PageHomeState createState() => _PageHomeState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _PageHomeState extends State<PageHome> {
   String _downloadsDirectory = 'Unknown';
   String _appSupportDirectory = 'Unknown';
   Map<String, Sheet> _excelTables = {};
   Map _resMap = {};
   TextEditingController _controller = new TextEditingController(text: '');
   TextEditingController _controller2 = new TextEditingController(text: '');
-  int groupValue = 1;
+  int? groupValue = 1;
   List _repeatKeysValues = [];
 
   _launchURL(String url) async {
@@ -45,30 +42,42 @@ class _MyAppState extends State<MyApp> {
   sure2Json() {
     if (_controller2.text == '') return CommonFunc.showToast('请选择excel');
     String outputDirPath = '$_downloadsDirectory/gta_i18n_${formattedDate()}';
+    CancelFunc cancel =
+        BotToast.showLoading(backButtonBehavior: BackButtonBehavior.none);
     if (groupValue == 1) {
       ExcelList2Map().excelList2MapOutputFile(_resMap, outputDirPath);
     } else {
       CppI18n().excelList2MapOutputFile(_resMap, outputDirPath);
     }
+    cancel();
     _launchURL('file:///$outputDirPath');
   }
 
   String _completeText = '';
-  File _selectFile;
+  File? _selectFile;
   Future<void> _openPanel() async {
-    var result = await showOpenPanel(
+    XFile? result = await openFile(
       initialDirectory: "/Users/mirock/Desktop", //打开面板时显示的目录
-      allowsMultipleSelection: true, //允许选择多个文件或
-      allowedFileTypes: [
-        new FileTypeFilterGroup(label: 'excel', fileExtensions: ['xlsx'])
+      acceptedTypeGroups: <XTypeGroup>[
+        new XTypeGroup(label: 'excel', extensions: ['xlsx'])
       ], //允许文件扩展名
       confirmButtonText: "确定", //面板按钮文本更改
     ); //
     // 如果成功，则选择文件作为成功时的处理
-    if (!result.canceled) {
-      File xlsx = File(result.paths[0]);
-      _selectFile = xlsx;
-      _controller2.value = TextEditingValue(text: xlsx.path);
+    CancelFunc cancel =
+        BotToast.showLoading(backButtonBehavior: BackButtonBehavior.none);
+    if (result != null) {
+
+      var excelBytes = File(result.path).readAsBytesSync();
+      var decoder = SpreadsheetDecoder.decodeBytes(excelBytes);
+      SpreadsheetTable? table = decoder.tables['Sheet1'];
+      var values = table?.rows[0];
+
+
+
+
+
+      File xlsx = File(result.path);
       var bytes = xlsx.readAsBytesSync();
       var excel = Excel.decodeBytes(bytes);
       Map resMap;
@@ -89,31 +98,42 @@ class _MyAppState extends State<MyApp> {
         resMsgList = excelList2Map.repeatKeysValues;
       }
       setState(() {
+        _selectFile = xlsx;
+        _controller2.value = TextEditingValue(text: xlsx.path);
         _excelTables = excel.tables;
         _repeatKeysValues = resMsgList;
         _resMap = resMap;
       });
       // msgDialogRepeat(context,_repeatKeysValues.toString());
     }
+    cancel();
+
+    /// 不能乱捕获 需要手动管理出错的堆栈信息
+    // try {
+    // } catch (e) {
+    //   print(e);
+    //   CommonFunc.showToast('转换错误');
+    // } finally {
+    // }
   }
 
   Future<void> _savePanel() async {
-    var result = await showSavePanel(
-      suggestedFileName: "新的文件.png", //打开面板时要保存的文件名
+    String? result = await getSavePath(
+      suggestedName: "新的文件.png", //打开面板时要保存的文件名
       initialDirectory: "/Users/mirock/Desktop", //打开面板时显示目录
       // allowedFileTypes: ["png"], //允许文件扩展名
       // confirmButtonText: "保存!",  //面板按钮文本更改
     );
-    if (!result.canceled && _selectFile != null) {
-      _selectFile.copy(result.paths[0]);
+    if (result != null && _selectFile != null) {
+      _selectFile?.copy(result);
     } else {
       setState(() => _completeText = "总觉得不行");
     }
   }
 
   Future<void> initDirectories() async {
-    String downloadsDirectory;
-    String appSupportDirectory;
+    String? downloadsDirectory;
+    String? appSupportDirectory;
     final PathProviderWindows provider = PathProviderWindows();
     try {
       downloadsDirectory = await provider.getDownloadsPath();
@@ -126,8 +146,8 @@ class _MyAppState extends State<MyApp> {
       appSupportDirectory = '无法获取应用支持目录: $exception';
     }
     setState(() {
-      _downloadsDirectory = downloadsDirectory;
-      _appSupportDirectory = appSupportDirectory;
+      _downloadsDirectory = downloadsDirectory ?? _downloadsDirectory;
+      _appSupportDirectory = appSupportDirectory ?? _appSupportDirectory;
     });
     _controller.value = TextEditingValue(text: _downloadsDirectory);
   }
@@ -292,7 +312,7 @@ class _MyAppState extends State<MyApp> {
   Map _fileJsonMap = {};
   Widget prvJsonDemo() {
     String prettyJsonStr =
-    new JsonEncoder.withIndent('    ').convert(_fileJsonMap);
+        new JsonEncoder.withIndent('    ').convert(_fileJsonMap);
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 20.0),
       child: SingleChildScrollView(
@@ -334,7 +354,7 @@ class _MyAppState extends State<MyApp> {
   Widget excelListContent() {
     List<Widget> list = [];
     _excelTables.keys.forEach((String sheetName) {
-      Sheet sheet = _excelTables[sheetName];
+      Sheet sheet = _excelTables[sheetName]!;
       List<List<dynamic>> rows = sheet.rows;
       list.add(excelListRows(rows));
       // print(excelListItem(rows));
@@ -404,20 +424,20 @@ class _MyAppState extends State<MyApp> {
       child: Row(
         children: [
           Text('选择多语言使用场景：'),
-          Radio(
+          Radio<int>(
             value: 1,
             groupValue: groupValue,
-            onChanged: (v) {
+            onChanged: (int? v) {
               setState(() {
                 groupValue = v;
               });
             },
           ),
           Text('web'),
-          Radio(
+          Radio<int>(
             value: 2,
             groupValue: groupValue,
-            onChanged: (v) {
+            onChanged: (int? v) {
               setState(() {
                 groupValue = v;
               });
@@ -469,7 +489,7 @@ class _MyAppState extends State<MyApp> {
               child: Text('另存为'),
             ),
           ),
-          Text(_completeText ?? ""),
+          Text(_completeText),
         ],
       ),
     );
@@ -488,17 +508,21 @@ class _MyAppState extends State<MyApp> {
               style: BorderStyle.solid,
             ),
           ),
+          // constraints: BoxConstraints(
+          //   maxHeight: 22.0,
+          // ),
           width: 500,
-          height: 22.0,
           margin: EdgeInsets.only(top: 10.0),
           child: TextField(
             controller: ctl,
             decoration: InputDecoration(
               hintText: '',
-              contentPadding: EdgeInsets.all(8.5),
+              isDense: true, // 使用较少的垂直空间
+              contentPadding: EdgeInsets.all(5),
               disabledBorder: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
+              border: UnderlineInputBorder(),
             ),
             keyboardType: TextInputType.text, //键盘类型
             textInputAction: TextInputAction.search, //为next时，enter键显示的文字内容为 下一步
