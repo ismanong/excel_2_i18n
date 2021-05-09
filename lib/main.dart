@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:i18n_tools/pages/app.dart';
+import 'package:i18n_tools/pages/PageHome.dart';
 import 'dart:math' as math;
 import 'package:window_size/window_size.dart' as window_size;
 

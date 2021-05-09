@@ -26,7 +26,7 @@ dependencies:
 
   path_provider: ^2.0.1
   url_launcher: ^6.0.3
-  excel: ^2.0.0-null-safety
+  excel: ^2.0.0-null-safety # BUG https://github.com/brendan-duncan/archive/issues/144
   crypto: ^3.0.1
   spreadsheet_decoder: ^2.0.0
   file_selector: ^0.8.2

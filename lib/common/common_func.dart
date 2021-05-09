@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class CommonFunc {
-
   static writeFile(String saveFilePath, ByteData data) async {
     File saveFile = File(saveFilePath); // 需要保存的文件
     if (!saveFile.existsSync()) {
@@ -87,10 +86,13 @@ class CommonFunc {
 //    return false;
 //  }
 
-  static showToast(String msg, {String position = 'top'}) {
+  static showToast(String msg, {Alignment align = Alignment.center}) {
     BotToast.showText(
       text: msg,
-      align: Alignment.center,
+      align: align,
+      // contentColor: Colors.yellow,
+      // textStyle: const TextStyle(fontSize: 17, color: Colors.black),
+      borderRadius: BorderRadius.all(Radius.circular(50)),
     );
   }
 

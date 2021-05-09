@@ -1,24 +1,56 @@
 import 'dart:convert';
-
+import 'dart:io';
 import 'package:crypto/crypto.dart';
-import 'package:excel/excel.dart';
 import 'package:flutter/services.dart';
 import 'package:i18n_tools/common/common_func.dart';
+import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
 
 import 'dir_file_tools.dart';
 
+const Map<String, String> langCodeMapArb = {
+  "zh-cn": "intl_zh_CN", // 英语
+  "zh-zh": "intl_zh_TW", // 繁体中文
+  "en-us": "intl_en", // 简体中文
+  "de-de": "intl_de", // 土耳其语
+  "fr-fr": "intl_fr", // 德语
+  "es-es": "intl_es", // 法语
+  "pt-pt": "intl_pt", // 俄语
+  "ru-ru": "intl_ru", // 西班牙语
+  "tr-tr": "intl_tr", // 葡萄牙语
+  "ar-ar": "intl_ar", // 波兰语
+  "id-id": "intl_id", // 印尼语
+  "it-it": "intl_it", // 意大利语
+  "pl-pl": "intl_pl", // 泰语
+  "th-th": "intl_th", // 阿拉伯语
+  "kr-kr": "intl_ko", // 韩语
+  "jp-jp": "intl_ja", // 日文  //公司内部写错的遗留问题  正确的是 "ja": "ja-jp"
+  "vi-vn": "intl_vi", // 越南
+};
+
 class ExcelList2Map {
-  void excelList2MapOutputFile(Map resMap, String outputDirPath) {
+  void excelList2MapOutputFile(
+      Map<String, Map> resMap, String outputDirPath, String? suffix) {
     resMap.forEach((key, value) {
       if (key == null) {
         CommonFunc.showToast('有多余空列！！！！！会输出null.json');
         return;
       }
       // String json = jsonEncode(value);
-      String prettyJsonStr = new JsonEncoder.withIndent('    ').convert(value);
-      String saveFile = '$outputDirPath/$key.json';
-      List<int> bytes = utf8.encode(prettyJsonStr);
-      writeFile(saveFile, bytes);
+      for (String lang in value.keys) {
+        Map content = value[lang] as Map;
+        String prettyJsonStr =
+            new JsonEncoder.withIndent('    ').convert(content);
+        String saveFilePath;
+        if (suffix == null) {
+          suffix = '.json';
+        }
+        if (suffix == '.arb') {
+          lang = langCodeMapArb[lang] ?? lang;
+        }
+        saveFilePath = '$outputDirPath/$key/$lang$suffix';
+        List<int> bytes = utf8.encode(prettyJsonStr);
+        writeFile(saveFilePath, bytes);
+      }
 
       // TODO string 怎么转 ByteData
       // Uint8List bytes = utf8.encode(json);
@@ -27,54 +59,68 @@ class ExcelList2Map {
     });
   }
 
-  Map<String, Map<dynamic, dynamic>> excelList2Map(
-      Map<String, Sheet> excelTables) {
-    // for (var table in excel.tables.keys) {
-    //   print('sheet name: '+ table); //sheet Name
-    //   print('maxCols   : '+ excel.tables[table].maxCols.toString());
-    //   print('maxRows   : '+ excel.tables[table].maxRows.toString());
-    //   for (var row in excel.tables[table].rows) {
-    //     print("$row");
-    //   }
-    // }
-    List<Map<dynamic, dynamic>> res = [];
-    Map<String, Map<dynamic, dynamic>> resMap = {};
-    excelTables.keys.forEach((String sheetName) {
-      Sheet sheet = excelTables[sheetName]!;
-      List<List<Data?>> rows = sheet.rows;
-      Map item = excelList2MapItem(sheetName, rows);
-      res.add(item);
-    });
+  Map<String, Map<dynamic, dynamic>> excelList2Map(String filePath) {
+    /// 解码excel文件 => Map
+    var excelBytes = File(filePath).readAsBytesSync();
+    var decoder = SpreadsheetDecoder.decodeBytes(excelBytes);
+    Map<String, SpreadsheetTable> tables = decoder.tables;
 
-    res.forEach((Map<dynamic, dynamic> element) {
-      element.forEach((key, value) {
-        if (resMap.containsKey(key)) {
-          resMap[key]!.addAll(value);
-        } else {
-          resMap[key] = value;
-        }
-      });
-    });
-    return resMap;
+    Map<String, Map<dynamic, dynamic>> listSheetsConvert = {}; // 每个sheet转换后的存储
+    Map<String, Map<dynamic, dynamic>> resultMap = {};
+
+    /// 处理
+    /// `rows` 是一个行数组 每行是一个单元格数组
+    for (String sheetName in tables.keys) {
+      SpreadsheetTable? sheetItem = tables[sheetName];
+      if (sheetItem == null) {
+        continue;
+      }
+      List<List> _rowsCopy = new List.from(sheetItem.rows);
+      Map item = SheetItem().getTable(sheetName, _rowsCopy);
+      listSheetsConvert[sheetItem.name] = item;
+    }
+
+    return listSheetsConvert;
+
+    /// 合并多个sheet
+    // for (String sheetName in listSheetsConvert.keys) {
+    //   Map<dynamic, dynamic> sheetMap = listSheetsConvert[sheetName]!;
+    //   sheetMap.forEach((key, value) {
+    //     if (resultMap.containsKey(key)) {
+    //       resultMap[key]!.addAll(value);
+    //     } else {
+    //       resultMap[key] = value;
+    //     }
+    //   });
+    // }
+    // return resultMap;
+  }
+}
+
+class SheetItem {
+  List<String> titles = [];
+  Map<String, Map> allLanguages = {};
+
+  Map getTable(String sheetName, List<List> rowsCopy) {
+    List<dynamic> rowHead = rowsCopy.removeAt(0); //删除数组,返回删除项,获取标题
+    List<List> rowBody = rowsCopy; // 获取标题
+    getTableHead(rowHead);
+    Map item = getTableBody(sheetName, rowBody);
+    return item;
   }
 
-  RegExp reg = new RegExp("[a-zA-Z-]+");
-  Map excelList2MapItem(String sheetName, List<List<Data?>> rows) {
-    // `rows` 是一个行数组 每行是一个单元格数组
-    List<Data?> titleRow = rows[0];
-    Map allLanguages = {};
-    List<String> titles = [];
+  Map<String, Map> getTableHead(List<dynamic> rowHead) {
     // 分割-输出表头
-    for (int i = 0; i < titleRow.length; i++) {
-      String str = titleRow[i]!.value; // 取出英文字母(即 国家英文简写标识code)
+    for (int i = 0; i < rowHead.length; i++) {
+      String str = rowHead[i]; // 取出英文字母(即 国家英文简写标识code)
       String? langCode = reg.stringMatch(str);
       if (i == 0) {
         // if(abcdefg === 'key') //TODO  待办
-        titles.add(titleRow[i]!.value);
+        titles.add(rowHead[i]);
       } else {
         if (langCode == null || langCode == '') {
           // langCode == '' 丢弃——多语言的备注(备注一般给翻译者阅读使用，对程序是无用的)
-          throw '\n国家为空: $sheetName $i ${titleRow[i]} \nlangCode: $langCode';
+          throw '\n国家为空: sheetName $i ${rowHead[i]} \nlangCode: $langCode';
         } else {
           // 取出语言标识代码(zh-cn)  从1开始取 因为0是 key
           String langKey = getLangCode(langCode);
@@ -84,41 +130,37 @@ class ExcelList2Map {
         }
       }
     }
+    return allLanguages;
+  }
 
+  RegExp reg = new RegExp("[a-zA-Z-]+");
+  Map getTableBody(String sheetName, List<List> rowBody) {
     // 分割-输出表内容
-    for (int i = 1; i < rows.length; i++) {
-      List<Data?> row = rows[i];
+    for (int i = 0; i < rowBody.length; i++) {
+      List<dynamic> row = rowBody[i];
       // 如果表key为空，则输出md5,以第一列内容输出md5
-      String rowKey = getKey(row[0]?.value, titles, row);
-      _checkKey(rowKey, titles, row, sheetName);
-
       for (int j = 1; j < row.length; j++) {
-        // titles[j] 获取语言标识 row[0] 获取此行语言的key row[j] 获取此行语言的value
-        // allLanguages[titles[j]][row_key] = row[j] ?? row_key;
-        /// ------------------------------ TODO
-        // if (allLanguages[titles[j]][sheetName] == null) {
-        //   allLanguages[titles[j]][sheetName] = {};
-        // }
-        /// ------------------------------
-        // Map sss = {};
-        // sss[row_key] = row[j] ?? row_key;
-        // if(allLanguages[titles[j]][sheetName].containsKey(row_key)){
-        //   Map mmm = allLanguages[titles[j]][sheetName];
-        //   mmm.addAll(sss);
-        // }else{
-        // String val = row[j] ?? row[titles.indexOf('en-us')]; /// 默认英文
-
-        /// 重要
-        // allLanguages[titles[j]][sheetName][rowKey] = row[j]?.value ?? rowKey;
-        allLanguages[titles[j]][rowKey] = row[j]?.value ?? rowKey;
-        // }
-        /// {"en-us":{"key1":"en-us-key1-value1"},"zh-cn":{"key1":"zh-cn-key1-value2"}}
+        String lang = titles[j];
+        String? value = row[j]; // 默认输出中文
+        String rowKey = getKey(row[0], row);
+        // String rowKey = getKey(row[0], row) + '---$i+$j';
+        _setValue(lang, rowKey, value);
       }
     }
     return allLanguages;
   }
 
-  getKey(String? rowKey, titles, List<Data?> row) {
+  // 写值
+  _setValue(String lang, String rowKey, String? value) {
+    // _checkKey(rowKey, titles, row, sheetName);
+    Map<dynamic, dynamic>? item = allLanguages[lang];
+    if (item != null && value != null) {
+      item[rowKey] = value; // value ?? '#intl#'
+    }
+    // {"en-us":{"key1":"en-us-key1-value1"},"zh-cn":{"key1":"zh-cn-key1-value2"}}
+  }
+
+  getKey(String? rowKey, List<dynamic> row) {
     // if (rowKey != null && rowKey.length > 0) {
     //   String abc = reg.stringMatch(rowKey); // 可能key写的是注释 中文
     //   rowKey = abc == '' ? null : abc; // 取出英文字母
@@ -129,8 +171,8 @@ class ExcelList2Map {
       String langText;
       String langText1;
       String langText2;
-      langText1 = row[langIndex]?.value ?? '';
-      langText2 = row[langIndex2]?.value ?? '';
+      langText1 = row[langIndex] ?? '';
+      langText2 = row[langIndex2] ?? '';
       langText = langText1 + langText2; // 中英混合编码 来适应特殊语言场景 也增加复杂度
       List<int> bytes = utf8.encode(langText); // data being hashed
       String digest = md5.convert(bytes).toString();
