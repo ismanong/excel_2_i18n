@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:i18n_tools/common/common_func.dart';
+import 'package:i18n_tools/util/xxx.dart';
 import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
 
 import 'dir_file_tools.dart';
@@ -113,7 +114,8 @@ class SheetItem {
     // 分割-输出表头
     for (int i = 0; i < rowHead.length; i++) {
       String str = rowHead[i]; // 取出英文字母(即 国家英文简写标识code)
-      String? langCode = reg.stringMatch(str);
+      // String? langCode = reg.stringMatch(str); // TODO -----
+      String? langCode = str; // TODO -----
       if (i == 0) {
         // if(abcdefg === 'key') //TODO  待办
         titles.add(rowHead[i]);
@@ -196,26 +198,38 @@ class SheetItem {
   }
 
   getLangCode(String? langCode) {
-    return langCodeMap[langCode];
+    String? targetCode;
+    langCodeMap.forEach((List<String> element) {
+      for (var code in element) {
+        if (code == langCode) {
+          targetCode = code;
+          break; // 结束循环，只能跳出一层
+        }
+      }
+    });
+    if(targetCode == null){
+      throw '未匹配到多语言支持的lang-code: $langCode';
+    }
+    return targetCode;
   }
 
-  Map<String, String> langCodeMap = {
-    "en": "en-us", // 英语
-    "zh": "zh-zh", // 繁体中文
-    "cn": "zh-cn", // 简体中文
-    "tr": "tr-tr", // 土耳其语
-    "de": "de-de", // 德语
-    "fr": "fr-fr", // 法语
-    "ru": "ru-ru", // 俄语
-    "es": "es-es", // 西班牙语
-    "pt": "pt-pt", // 葡萄牙语
-    "pl": "pl-pl", // 波兰语
-    "id": "id-id", // 印尼语
-    "it": "it-it", // 意大利语
-    "th": "th-th", // 泰语
-    "ar": "ar-ar", // 阿拉伯语
-    "kr": "kr-kr", // 韩语
-    "jp": "jp-jp", // 日文  //公司内部写错的遗留问题  正确的是 "ja": "ja-jp"
-    "vi": "vi-vn", // 越南
-  };
+  // Map<String, String> langCodeMap = {
+  //   "en": "en-us", // 英语
+  //   "zh": "zh-zh", // 繁体中文
+  //   "cn": "zh-cn", // 简体中文
+  //   "tr": "tr-tr", // 土耳其语
+  //   "de": "de-de", // 德语
+  //   "fr": "fr-fr", // 法语
+  //   "ru": "ru-ru", // 俄语
+  //   "es": "es-es", // 西班牙语
+  //   "pt": "pt-pt", // 葡萄牙语
+  //   "pl": "pl-pl", // 波兰语
+  //   "id": "id-id", // 印尼语
+  //   "it": "it-it", // 意大利语
+  //   "th": "th-th", // 泰语
+  //   "ar": "ar-ar", // 阿拉伯语
+  //   "kr": "kr-kr", // 韩语
+  //   "jp": "jp-jp", // 日文  //公司内部写错的遗留问题  正确的是 "ja": "ja-jp"
+  //   "vi": "vi-vn", // 越南
+  // };
 }
