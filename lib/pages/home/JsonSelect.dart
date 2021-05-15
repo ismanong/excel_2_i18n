@@ -1,21 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:bot_toast/bot_toast.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:i18n_tools/util/convert_excel.dart';
+import 'package:i18n_tools/util/dir_file_tools.dart';
 import 'package:i18n_tools/util/xxx.dart';
-import 'package:i18n_tools/widgets/tree_view.dart';
-import 'package:path_provider_windows/path_provider_windows.dart';
-import 'package:excel/excel.dart';
-import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
+import 'package:i18n_tools/util/multiple_files_to_map.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'c++.dart';
-import '../../common/common_func.dart';
-import '../../util/dir_file_tools.dart';
-import '../../util/excel_list_2_map.dart';
-import 'msg_dialog_repeat.dart';
 
 class JsonSelect extends StatefulWidget {
   @override
@@ -25,28 +16,17 @@ class JsonSelect extends StatefulWidget {
 class _JsonSelectState extends State<JsonSelect> {
   TextEditingController _controller = new TextEditingController(text: '');
 
-  _launchURL(String url) async {
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
-
-  _output() {}
-
-  String _completeText = '';
   Future<void> _openFileSelector() async {
     String? result = await getDirectoryPath(
       initialDirectory: "/Users/mirock/Desktop", //打开面板时显示的目录
       confirmButtonText: "确定", //面板按钮文本更改
     ); //
     // 如果成功，则选择文件作为成功时的处理
-    CancelFunc cancel =
-        BotToast.showLoading(backButtonBehavior: BackButtonBehavior.none);
+    CancelFunc cancel = BotToast.showLoading();
     if (result != null) {
-      String outputDirPath = await jsons(result);
-      _launchURL('file:///$outputDirPath');
+      List<Map<String, dynamic>> dataListMap = await multipleFilesToMap(result);
+      String outputDirPath = await mapToExcel('多语言', dataListMap);
+      openFileDirectory(outputDirPath);
       setState(() {
         _controller.value = TextEditingValue(text: result);
       });

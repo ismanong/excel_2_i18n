@@ -6,17 +6,11 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:i18n_tools/RunConfig.dart';
-import 'package:i18n_tools/widgets/tree_view.dart';
-import 'package:path_provider_windows/path_provider_windows.dart';
-import 'package:excel/excel.dart';
-import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
+import 'package:i18n_tools/util/map_to_multiple_files.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'JsonSelect.dart';
-import 'c++.dart';
 import '../../common/common_func.dart';
 import '../../util/dir_file_tools.dart';
 import '../../util/excel_list_2_map.dart';
-import 'msg_dialog_repeat.dart';
 
 class ExcelSelect extends StatefulWidget {
   @override
@@ -27,14 +21,6 @@ class _ExcelSelectState extends State<ExcelSelect> {
   Map<String, Map> _resMap = {};
   TextEditingController _controller = new TextEditingController(text: '');
   String? groupValue = '.json';
-
-  _launchURL(String url) async {
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
 
   String _completeText = '';
   File? _selectFile;
@@ -47,8 +33,7 @@ class _ExcelSelectState extends State<ExcelSelect> {
       confirmButtonText: "确定", //面板按钮文本更改
     ); //
     // 如果成功，则选择文件作为成功时的处理
-    CancelFunc cancel =
-        BotToast.showLoading(backButtonBehavior: BackButtonBehavior.none);
+    CancelFunc cancel = BotToast.showLoading();
     if (result != null) {
       Map<String, Map> resMap;
       ExcelList2Map excelList2Map = ExcelList2Map();
@@ -94,11 +79,10 @@ class _ExcelSelectState extends State<ExcelSelect> {
     String downloadsDirectory = RunConfig.outputDirectoryPath;
     if (_controller.text == '') return CommonFunc.showToast('请选择excel');
     String outputDirPath = '$downloadsDirectory/gta_i18n_${formattedDate()}';
-    CancelFunc cancel =
-        BotToast.showLoading(backButtonBehavior: BackButtonBehavior.none);
-    ExcelList2Map().excelList2MapOutputFile(_resMap, outputDirPath, groupValue);
+    CancelFunc cancel = BotToast.showLoading();
+    mapToMultipleFiles(_resMap, outputDirPath, groupValue);
     cancel();
-    _launchURL('file:///$outputDirPath');
+    openFileDirectory(outputDirPath);
   }
 
   _onChanged(String? v) {

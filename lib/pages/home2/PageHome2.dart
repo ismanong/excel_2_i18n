@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:i18n_tools/RunConfig.dart';
 import 'package:i18n_tools/pages/home/JsonSelect.dart';
+import 'package:i18n_tools/util/convert_excel.dart';
 import 'package:i18n_tools/util/dir_file_tools.dart';
 import 'package:i18n_tools/util/xxx.dart';
 
@@ -19,14 +20,26 @@ class _PageHome2State extends State<PageHome2> {
   GlobalKey<CodeSelectState> codeKey = GlobalKey();
   GlobalKey<CodeSelect2State> codeKey2 = GlobalKey();
 
+  List<List> allTranslated = []; //全部翻译
   List<List> untranslated = []; //未翻译
   List<List> translated = []; //已翻译
   List<List> mergeTranslation = []; //已翻译
   _output() async {
     untranslated = codeKey.currentState!.csv;
-    translated = codeKey2.currentState!.csv;
+    String filePath = await csvToExcel('待翻译', untranslated);
+    openFileDirectory(filePath);
+  }
 
-    for (List item in untranslated) {
+  _outputAll() async {
+    allTranslated = codeKey.currentState!.csvAll;
+    String filePath = await csvToExcel('All翻译', allTranslated);
+    openFileDirectory(filePath);
+  }
+
+  _convert() async {
+    allTranslated = codeKey.currentState!.csvAll;
+    translated = codeKey2.currentState!.csv;
+    for (List item in allTranslated) {
       String cn = item[1]; //获取中文
       for (List target in translated) {
         String targetCN = target[1]; //获取中文
@@ -37,9 +50,7 @@ class _PageHome2State extends State<PageHome2> {
         }
       }
     }
-    print(untranslated);
-    String filePath = await csvToExcel('转换', untranslated);
-    // String dirPath = File(filePath).parent.path;
+    String filePath = await csvToExcel('合并翻译', allTranslated);
     openFileDirectory(filePath);
   }
 
@@ -55,23 +66,28 @@ class _PageHome2State extends State<PageHome2> {
       appBar: AppBar(
         title: Text('输出目录: ${RunConfig.outputDirectoryPath}'),
       ),
-      body: ListView(
+      body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.0),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: CodeSelect(codeKey),
+        child: Column(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: CodeSelect(codeKey),
+                  ),
+                  SizedBox(width: 20.0),
+                  Expanded(
+                    child: CodeSelect2(codeKey2),
+                  ),
+                ],
               ),
-              SizedBox(width: 20.0),
-              Expanded(
-                child: CodeSelect2(codeKey2),
-              ),
-            ],
-          ),
-          SizedBox(height: 20.0),
-          _buildRowButtons(),
-        ],
+            ),
+            SizedBox(height: 20.0),
+            _buildRowButtons(),
+            SizedBox(height: 20.0),
+          ],
+        ),
       ),
     );
   }
@@ -80,6 +96,24 @@ class _PageHome2State extends State<PageHome2> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        SizedBox(
+          width: 80.0,
+          height: 22.0,
+          child: ElevatedButton(
+            onPressed: _outputAll,
+            child: Text('下载全部'),
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all(Colors.blue),
+              //字体颜色
+              foregroundColor: MaterialStateProperty.all(Colors.white),
+              //高亮色，按钮处于focused, hovered, or pressed时的颜色
+              overlayColor: MaterialStateProperty.all(Colors.blueAccent),
+              //阴影颜色
+              shadowColor: MaterialStateProperty.all(Colors.black),
+            ),
+          ),
+        ),
+        SizedBox(width: 20.0),
         SizedBox(
           width: 80.0,
           height: 22.0,
@@ -102,7 +136,7 @@ class _PageHome2State extends State<PageHome2> {
           width: 80.0,
           height: 22.0,
           child: ElevatedButton(
-            onPressed: _output,
+            onPressed: _convert,
             child: Text('转换'),
             style: ButtonStyle(
               backgroundColor: MaterialStateProperty.all(Colors.transparent),

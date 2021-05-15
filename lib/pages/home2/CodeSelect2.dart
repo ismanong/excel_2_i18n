@@ -7,7 +7,8 @@ import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'CodeText.dart';
-import 'read_file_to_map.dart';
+import 'CsvDataTable.dart';
+import '../../util/multiple_files_to_map.dart';
 
 class CodeSelect2 extends StatefulWidget {
   CodeSelect2(Key key) : super(key: key);
@@ -33,7 +34,7 @@ class CodeSelect2State extends State<CodeSelect2> {
     ); //
     // 如果成功，则选择文件作为成功时的处理
     CancelFunc cancel =
-        BotToast.showLoading(backButtonBehavior: BackButtonBehavior.none);
+        BotToast.showLoading();
     if (result != null) {
       Map<String, Map> resMap;
       var excelBytes = File(result.path).readAsBytesSync();
@@ -61,9 +62,8 @@ class CodeSelect2State extends State<CodeSelect2> {
     return Column(
       children: [
         pathCon(),
-        SizedBox(
-          height: 500,
-          child: _buildDataTable(),
+        Expanded(
+          child: CsvDataTable(csv: _csv),
         ),
       ],
     );
@@ -77,7 +77,9 @@ class CodeSelect2State extends State<CodeSelect2> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              buildTextField('打开翻译的Excel', _controller),
+              Expanded(
+                child: buildTextField('打开翻译的Excel', _controller),
+              ),
               SizedBox(width: 10.0),
               Container(
                 width: 80.0,
@@ -113,10 +115,6 @@ class CodeSelect2State extends State<CodeSelect2> {
               style: BorderStyle.solid,
             ),
           ),
-          // constraints: BoxConstraints(
-          //   maxHeight: 22.0,
-          // ),
-          width: 500,
           margin: EdgeInsets.only(top: 10.0),
           child: TextField(
             controller: ctl,

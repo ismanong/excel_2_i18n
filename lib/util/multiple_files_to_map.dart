@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
-import 'file:///D:/_github/excel_2_i18n/lib/util/LangCodeManage.dart';
 import 'package:path/path.dart';
+import 'LangCodeManage.dart';
 
-Future<List<Map<String, dynamic>>> readFileToMap(String filesDirectory) async {
+///
+/// 多个[json,arb]文件 转换成 一个map数据
+///
+Future<List<Map<String, dynamic>>> multipleFilesToMap(String directory) async {
   List<FileSystemEntity> fs = []; // 所有的缓存文件
   /// 分享文件夹
-  if (await FileSystemEntity.isDirectory(filesDirectory)) {
-    fs.addAll(Directory(filesDirectory).listSync());
+  if (await FileSystemEntity.isDirectory(directory)) {
+    fs.addAll(Directory(directory).listSync());
   }
   Map<String, Map> res1 = {};
   for (FileSystemEntity item in fs) {

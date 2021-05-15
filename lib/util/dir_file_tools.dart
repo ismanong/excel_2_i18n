@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /*
@@ -48,6 +48,20 @@ String formattedDate() {
       '${dateTime.second}_' +
       '${dateTime.millisecond}';
   return dateTimeString;
+}
+
+dateFormatTimestamp(int timestamp,
+    {bySecond: false, format: 'yyyy-MM-dd HH:mm:ss'}) {
+  // 默认接收毫秒时间戳 如果服务按秒返回 则设置bySecond:true
+  if (bySecond) {
+    timestamp = timestamp * 1000;
+  }
+  DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+  return DateFormat(format).format(dateTime);
+}
+
+dateNowFormat() {
+  return DateFormat('yyyy-MM-dd HH-mm-ss').format(DateTime.now());
 }
 
 openFileDirectory(String dirPath) async {

@@ -6,60 +6,13 @@ import 'package:i18n_tools/common/common_func.dart';
 import 'package:i18n_tools/util/xxx.dart';
 import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
 
+import 'LangCodeManage.dart';
 import 'dir_file_tools.dart';
+import 'map_to_multiple_files.dart';
 
-const Map<String, String> langCodeMapArb = {
-  "zh-cn": "intl_zh_CN", // 英语
-  "zh-zh": "intl_zh_TW", // 繁体中文
-  "en-us": "intl_en", // 简体中文
-  "de-de": "intl_de", // 土耳其语
-  "fr-fr": "intl_fr", // 德语
-  "es-es": "intl_es", // 法语
-  "pt-pt": "intl_pt", // 俄语
-  "ru-ru": "intl_ru", // 西班牙语
-  "tr-tr": "intl_tr", // 葡萄牙语
-  "ar-ar": "intl_ar", // 波兰语
-  "id-id": "intl_id", // 印尼语
-  "it-it": "intl_it", // 意大利语
-  "pl-pl": "intl_pl", // 泰语
-  "th-th": "intl_th", // 阿拉伯语
-  "kr-kr": "intl_ko", // 韩语
-  "jp-jp": "intl_ja", // 日文  //公司内部写错的遗留问题  正确的是 "ja": "ja-jp"
-  "vi-vn": "intl_vi", // 越南
-};
+
 
 class ExcelList2Map {
-  void excelList2MapOutputFile(
-      Map<String, Map> resMap, String outputDirPath, String? suffix) {
-    resMap.forEach((key, value) {
-      if (key == null) {
-        CommonFunc.showToast('有多余空列！！！！！会输出null.json');
-        return;
-      }
-      // String json = jsonEncode(value);
-      for (String lang in value.keys) {
-        Map content = value[lang] as Map;
-        String prettyJsonStr =
-            new JsonEncoder.withIndent('    ').convert(content);
-        String saveFilePath;
-        if (suffix == null) {
-          suffix = '.json';
-        }
-        if (suffix == '.arb') {
-          lang = langCodeMapArb[lang] ?? lang;
-        }
-        saveFilePath = '$outputDirPath/$key/$lang$suffix';
-        List<int> bytes = utf8.encode(prettyJsonStr);
-        writeFile(saveFilePath, bytes);
-      }
-
-      // TODO string 怎么转 ByteData
-      // Uint8List bytes = utf8.encode(json);
-      // ByteData blob = ByteData.sublistView(bytes);
-      // writeFile(saveFile,bytes);
-    });
-  }
-
   Map<String, Map<dynamic, dynamic>> excelList2Map(String filePath) {
     /// 解码excel文件 => Map
     var excelBytes = File(filePath).readAsBytesSync();
@@ -199,7 +152,7 @@ class SheetItem {
 
   getLangCode(String? langCode) {
     String? targetCode;
-    langCodeMap.forEach((List<String> element) {
+    LangCodeManage.langCodeMap.forEach((List<String> element) {
       for (var code in element) {
         if (code == langCode) {
           targetCode = code;
@@ -207,7 +160,7 @@ class SheetItem {
         }
       }
     });
-    if(targetCode == null){
+    if (targetCode == null) {
       throw '未匹配到多语言支持的lang-code: $langCode';
     }
     return targetCode;
