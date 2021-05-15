@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /*
 * dart 获取目录下的所有文件及子目录
@@ -47,6 +48,15 @@ String formattedDate() {
       '${dateTime.second}_' +
       '${dateTime.millisecond}';
   return dateTimeString;
+}
+
+openFileDirectory(String dirPath) async {
+  String url = 'file:///$dirPath';
+  if (await canLaunch(url)) {
+    await launch(url);
+  } else {
+    throw 'openFileDirectory失败 $url';
+  }
 }
 
 // var myDir = new Directory('D:/_work/svn资源/client/前端技术/语料包');

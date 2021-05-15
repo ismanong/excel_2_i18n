@@ -182,6 +182,26 @@ Future<String> jsonToExcel(
   return "$outputDirPath";
 }
 
+Future<String> csvToExcel(String fileName, List<List> csvData) async {
+  var excel = Excel.createExcel();
+  Sheet sheetObject = excel['Sheet1'];
+
+  for (int i = 0; i < csvData.length; i++) {
+    sheetObject.appendRow(csvData[i]);
+  }
+
+  final PathProviderWindows provider = PathProviderWindows();
+  var downloadsDirectory = await provider.getDownloadsPath();
+  String outputDirPath = '$downloadsDirectory/gta_i18n_${formattedDate()}';
+
+  final onValue = excel.encode();
+  File(("$outputDirPath/$fileName.xlsx"))
+    ..createSync(recursive: true)
+    ..writeAsBytesSync(onValue!);
+  print(sheetObject);
+  return "$outputDirPath"; // 文件夹目录
+}
+
 List<List<String>> langCodeMap = [
   ["cn", "zh-cn", "intl_zh_CN"], // 简体中文
   ["zh", "zh-zh", "intl_zh_TW"], // 繁体中文

@@ -104,7 +104,7 @@ class SheetItem {
 
   Map getTable(String sheetName, List<List> rowsCopy) {
     List<dynamic> rowHead = rowsCopy.removeAt(0); //删除数组,返回删除项,获取标题
-    List<List> rowBody = rowsCopy; // 获取标题
+    List<List> rowBody = rowsCopy; // 获取内容
     getTableHead(rowHead);
     Map item = getTableBody(sheetName, rowBody);
     return item;

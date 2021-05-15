@@ -1,29 +1,21 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:bot_toast/bot_toast.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:i18n_tools/util/xxx.dart';
-import 'package:i18n_tools/widgets/tree_view.dart';
-import 'package:path_provider_windows/path_provider_windows.dart';
-import 'package:excel/excel.dart';
-import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'c++.dart';
-import '../common/common_func.dart';
-import '../util/dir_file_tools.dart';
-import '../util/excel_list_2_map.dart';
-import 'msg_dialog_repeat.dart';
 
-class JsonSelect extends StatefulWidget {
+import 'CodeText.dart';
+import 'read_file_to_map.dart';
+
+class CodeSelect extends StatefulWidget {
+  CodeSelect(Key key) : super(key: key);
   @override
-  _JsonSelectState createState() => _JsonSelectState();
+  CodeSelectState createState() => CodeSelectState();
 }
 
-class _JsonSelectState extends State<JsonSelect> {
+class CodeSelectState extends State<CodeSelect> {
   TextEditingController _controller = new TextEditingController(text: '');
+  List<List> _data = [];
 
   _launchURL(String url) async {
     if (await canLaunch(url)) {
@@ -33,9 +25,6 @@ class _JsonSelectState extends State<JsonSelect> {
     }
   }
 
-  _output() {}
-
-  String _completeText = '';
   Future<void> _openFileSelector() async {
     String? result = await getDirectoryPath(
       initialDirectory: "/Users/mirock/Desktop", //打开面板时显示的目录
@@ -45,9 +34,18 @@ class _JsonSelectState extends State<JsonSelect> {
     CancelFunc cancel =
         BotToast.showLoading(backButtonBehavior: BackButtonBehavior.none);
     if (result != null) {
-      String outputDirPath = await jsons(result);
-      _launchURL('file:///$outputDirPath');
+      List<Map<String, dynamic>> dataListMap = await readFileToMap(result);
+      Map<String, dynamic> head = dataListMap[0];
+      List headList = head.keys.toList();
+      csv.add(headList);
+      for (int i = 0; i < dataListMap.length; i++) {
+        Map<String, dynamic> item = dataListMap[i];
+        if(item.values.contains('')){
+          _csv.add(item.values.toList());
+        }
+      }
       setState(() {
+        _data = _csv;
         _controller.value = TextEditingValue(text: result);
       });
     }
@@ -62,6 +60,9 @@ class _JsonSelectState extends State<JsonSelect> {
     // }
   }
 
+  List<List> _csv = [];
+  List<List> get csv => _csv;
+
   @override
   void initState() {
     super.initState();
@@ -72,14 +73,17 @@ class _JsonSelectState extends State<JsonSelect> {
     return Column(
       children: [
         pathCon(),
-        outputCon(),
+        SizedBox(
+          height: 500,
+          // child: CodeText(data: _data),
+          child: _buildDataTable(),
+        ),
       ],
     );
   }
 
   Widget pathCon() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -91,46 +95,19 @@ class _JsonSelectState extends State<JsonSelect> {
               Container(
                 width: 80.0,
                 height: 22.0,
-                child: OutlineButton(
-                  borderSide: BorderSide(color: Color(0xFFcccedb)),
-                  padding: EdgeInsets.all(0),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                child: OutlinedButton(
                   onPressed: _openFileSelector,
                   child: Text('浏览(B)'),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.all(0),
+                    side: BorderSide(color: Color(0xFFcccedb)),
+                    primary: Colors.black,
+                  ),
                 ),
               ),
             ],
           ),
           SizedBox(height: 20.0),
-        ],
-      ),
-    );
-  }
-
-  Widget outputCon() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.0),
-      child: Row(
-        children: [
-          Text(_completeText),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Color(0xFF3399ff),
-                style: BorderStyle.solid,
-              ),
-            ),
-            width: 80.0,
-            height: 22.0,
-            child: FlatButton(
-              hoverColor: Color(0xFFc9def5),
-              padding: EdgeInsets.all(0),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              onPressed: _output,
-              child: Text('输出'),
-            ),
-          ),
-          SizedBox(width: 10.0),
         ],
       ),
     );
@@ -179,6 +156,45 @@ class _JsonSelectState extends State<JsonSelect> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDataTable() {
+    if (_csv.isEmpty) {
+      return Container();
+    }
+    List<List> rowsCopy = new List.from(_csv);
+    List<dynamic> rowHead = rowsCopy.removeAt(0); //删除数组,返回删除项,获取标题
+    List<List> rowBody = rowsCopy; // 获取内容
+
+    List<DataColumn> columns = rowHead.map((dynamic e) {
+      return DataColumn(
+        label: Container(
+          width: 40.0,
+          child: Text('$e'),
+        ),
+      );
+    }).toList();
+
+    List<DataRow> rows = rowBody.map((List e) {
+      List<DataCell> cells = e.map((text) {
+        return DataCell(Container(
+          width: 40.0,
+          child: Text('$text'),
+        ));
+      }).toList();
+      return DataRow(
+        cells: cells,
+      );
+    }).toList();
+
+    return SingleChildScrollView(
+      child: DataTable(
+        columnSpacing: 0.0,
+        dataRowHeight: 20.0,
+        columns: columns,
+        rows: rows,
+      ),
     );
   }
 }

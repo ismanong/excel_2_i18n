@@ -1,0 +1,213 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:excel/excel.dart';
+import 'package:i18n_tools/widgets/tree_view.dart';
+
+class CodeText extends StatefulWidget {
+  @override
+  _CodeTextState createState() => _CodeTextState();
+}
+
+class _CodeTextState extends State<CodeText> {
+  Map<String, Sheet> _excelTables = {};
+  Map _resMap = {};
+  int groupValue = 1;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.blueAccent,
+                style: BorderStyle.solid,
+              ),
+            ),
+            child: excelListContent(),
+          ),
+        ),
+        Icon(Icons.arrow_forward),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.blueAccent,
+                style: BorderStyle.solid,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.blueAccent,
+                      style: BorderStyle.solid,
+                    ),
+                  ),
+                  width: 200,
+                  child: prvDemo2(),
+                ),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.redAccent,
+                        style: BorderStyle.solid,
+                      ),
+                    ),
+                    child: prvJsonDemo(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget prvDemo() {
+    List<dynamic> listKeys = _resMap.keys.toList();
+    return TreeView(
+      parentList: [
+        Parent(
+          isExpanded: true,
+          parent: Row(
+            children: [
+              Icon(Icons.folder, color: Colors.orange),
+              Text('web_i18n'),
+            ],
+          ),
+          childList: ChildList(
+            children: List<Widget>.generate(listKeys.length, (index) {
+              String key = listKeys[index];
+              Map value = _resMap[key];
+
+              return Container(
+                margin: EdgeInsets.only(left: 20.0),
+                height: 25.0,
+                child: FlatButton.icon(
+                  padding: EdgeInsets.all(0),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onPressed: () {
+                    setState(() {
+                      _fileJsonMap = value;
+                    });
+                  },
+                  icon: Icon(Icons.insert_drive_file_outlined,
+                      color: Colors.orange),
+                  label: Text('$key.json'),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget prvDemo2() {
+    List<dynamic> listKeys = _resMap.keys.toList();
+    return TreeView(
+      parentList: [
+        Parent(
+          isExpanded: true,
+          parent: Row(
+            children: [
+              Icon(Icons.folder, color: Colors.orange),
+              Text('web_i18n'),
+            ],
+          ),
+          childList: ChildList(
+            children: List<Widget>.generate(listKeys.length, (index) {
+              String key = listKeys[index];
+              Map value = _resMap[key];
+
+              return Container(
+                margin: EdgeInsets.only(left: 20.0),
+                height: 25.0,
+                child: FlatButton.icon(
+                  padding: EdgeInsets.all(0),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onPressed: () {
+                    setState(() {
+                      _fileJsonMap = value;
+                    });
+                  },
+                  icon: Icon(Icons.insert_drive_file_outlined,
+                      color: Colors.orange),
+                  label: Text('$key.json'),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Map _fileJsonMap = {};
+  Widget prvJsonDemo() {
+    String prettyJsonStr =
+    new JsonEncoder.withIndent('    ').convert(_fileJsonMap);
+        new JsonEncoder.withIndent('    ').convert(_fileJsonMap);
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.0),
+      child: SingleChildScrollView(
+        child: Text('$prettyJsonStr'),
+      ),
+    );
+  }
+
+  Widget excelListRowsRow(List<dynamic> row) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List<Widget>.generate(row.length, (index) {
+        // return Text('${row[index].toString()}');
+        return Container(
+          decoration: BoxDecoration(
+            color: row[index] == null ? Colors.redAccent : Colors.white,
+            border: Border.all(
+              color: Colors.grey,
+              style: BorderStyle.solid,
+            ),
+          ),
+          width: 30,
+          height: 30,
+          child: Text('$index'),
+        );
+      }),
+    );
+  }
+
+  Widget excelListRows(List<List<dynamic>> rows) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List<Widget>.generate(rows.length, (index) {
+        return excelListRowsRow(rows[index]);
+      }),
+    );
+  }
+
+  Widget excelListContent() {
+    List<Widget> list = [];
+    _excelTables.keys.forEach((String sheetName) {
+      Sheet? sheet = _excelTables[sheetName];
+      List<List<dynamic>> rows = sheet!.rows;
+      list.add(excelListRows(rows));
+      // print(excelListItem(rows));
+      // list.add(Text('Path Provider example app'));
+    });
+    return ListView(
+      children: list,
+    );
+  }
+}
+

@@ -14,9 +14,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'ExcelSelect.dart';
 import 'JsonSelect.dart';
 import 'c++.dart';
-import '../common/common_func.dart';
-import '../util/dir_file_tools.dart';
-import '../util/excel_list_2_map.dart';
+import '../../common/common_func.dart';
+import '../../util/dir_file_tools.dart';
+import '../../util/excel_list_2_map.dart';
 import 'msg_dialog_repeat.dart';
 
 class PageHome extends StatefulWidget {
@@ -28,30 +28,10 @@ class _PageHomeState extends State<PageHome> {
   TextEditingController _controller = new TextEditingController(text: '');
   int? groupValue = 1;
 
-  Future<void> initDirectories() async {
-    String? downloadsDirectory;
-    String? appSupportDirectory;
-    final PathProviderWindows provider = PathProviderWindows();
-    try {
-      downloadsDirectory = await provider.getDownloadsPath();
-    } catch (exception) {
-      downloadsDirectory = '无法获取下载目录: $exception';
-    }
-    try {
-      appSupportDirectory = await provider.getApplicationSupportPath();
-    } catch (exception) {
-      appSupportDirectory = '无法获取应用支持目录: $exception';
-    }
-    RunConfig.outputDirectoryPath = downloadsDirectory ?? 'Unknown';
-    RunConfig.appSupportDirectory = appSupportDirectory ?? 'Unknown';
-    _controller.value = TextEditingValue(text: RunConfig.outputDirectoryPath);
-    setState(() {});
-  }
-
   @override
   void initState() {
     super.initState();
-    initDirectories();
+    _controller.value = TextEditingValue(text: RunConfig.outputDirectoryPath);
   }
 
   @override
