@@ -6,8 +6,10 @@ class IconFont {
   static const String FONT_FAMILY = 'iconfont';
   // static const IconData demo = IconData(0xe7be, fontFamily: FONT_FAMILY);
 
-  static const IconData close = CupertinoIcons.xmark;
   static const IconData xmark = CupertinoIcons.xmark;
+  static const IconData checkmark = CupertinoIcons.checkmark;
+  static const IconData house = CupertinoIcons.house;
+  static const IconData house_fill = CupertinoIcons.house_fill;
   static const IconData settings = CupertinoIcons.settings;
   static const IconData grid_2x2 = CupertinoIcons.square_grid_2x2;
   static const IconData grid_3x2 = CupertinoIcons.square_grid_3x2;
