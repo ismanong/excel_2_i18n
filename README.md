@@ -13,3 +13,5 @@ https://youtu.be/xbKUFoMHEyI
 https://www.youtube.com/embed/xbKUFoMHEyI
 
 <iframe height=498 width=510 src="https://www.youtube.com/embed/xbKUFoMHEyI">
+
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/xbKUFoMHEyI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
